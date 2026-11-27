@@ -1,13 +1,46 @@
 # Ambientes virtuais
 venv/
-.env
+.venv/
+env/
 
-# Caches do Python
+# Segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.credentials
+credentials.json
+token.json
+session.json
+sessions/
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Logs e artefatos locais
+logs/
+*.log
+tmp/
+uploads/
+downloads/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
 
 # Sistema operacional
 .DS_Store
 Thumbs.db
+Desktop.ini
