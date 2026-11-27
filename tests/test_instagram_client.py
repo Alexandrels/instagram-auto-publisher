@@ -173,3 +173,77 @@ def test_api_error_is_sanitized(settings: Settings) -> None:
     assert error.http_status == 429
     assert error.is_transient
     assert "test-token" not in str(error)
+
+
+def test_create_carousel_item(settings: Settings) -> None:
+    session = Mock(spec=requests.Session)
+    session.post.return_value = mock_response({"id": "item-1"})
+    client = InstagramClient(settings, session=session)
+
+    item_id = client.create_carousel_item(
+        "https://example.com/image.jpg",
+        media_type="IMAGE",
+    )
+
+    assert item_id == "item-1"
+    data = session.post.call_args.kwargs["data"]
+    assert data["is_carousel_item"] == "true"
+    assert data["image_url"] == "https://example.com/image.jpg"
+
+
+def test_publish_reel_creates_reel_container(settings: Settings) -> None:
+    session = Mock(spec=requests.Session)
+    session.post.side_effect = [
+        mock_response({"id": "reel-container"}),
+        mock_response({"id": "reel-media"}),
+    ]
+    session.get.return_value = mock_response(
+        {"status": "FINISHED", "status_code": "FINISHED"}
+    )
+    client = InstagramClient(settings, session=session)
+
+    media_id = client.publish_reel(
+        "https://example.com/reel.mp4",
+        "Reel de teste",
+        "https://example.com/cover.jpg",
+    )
+
+    assert media_id == "reel-media"
+    reel_data = session.post.call_args_list[0].kwargs["data"]
+    assert reel_data["media_type"] == "REELS"
+    assert reel_data["video_url"] == "https://example.com/reel.mp4"
+    assert reel_data["cover_url"] == "https://example.com/cover.jpg"
+
+
+def test_rate_limit_with_backoff_retries(settings: Settings) -> None:
+    session = Mock(spec=requests.Session)
+    session.post.side_effect = [
+        mock_response(
+            {
+                "error": {
+                    "message": "Limit reached",
+                    "code": 32,
+                    "error_subcode": 2207051,
+                    "is_transient": True,
+                }
+            },
+            status_code=429,
+        ),
+        mock_response({"id": "container-123"}),
+    ]
+    delays: list[float] = []
+    client = InstagramClient(
+        settings,
+        session=session,
+        max_attempts=2,
+        sleep=delays.append,
+        random_value=lambda start, end: 0.0,
+    )
+
+    container_id = client.create_image_container(
+        "https://example.com/image.jpg",
+        "Teste",
+    )
+
+    assert container_id == "container-123"
+    assert delays == [1.0]

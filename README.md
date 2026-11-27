@@ -28,6 +28,22 @@ No Windows, use `venv\\Scripts\\activate` e ajuste o executavel conforme o ambie
 O fluxo cria um contêiner, aguarda o estado `FINISHED` e publica a mídia.
 Estados `ERROR` e `EXPIRED`, timeout e erros da Graph API interrompem o fluxo.
 
+## Midias avancadas
+
+O cliente tambem possui metodos para:
+
+- `create_carousel_item()` e `publish_carousel()` para carrosseis.
+- `create_reel()` e `publish_reel()` para Reels.
+- `PublishLedger` para registrar publicacoes confirmadas em uma janela de 24 horas.
+- `PublishQueue` para enfileirar, reivindicar e concluir jobs com persistencia SQLite.
+
+O contador deve registrar apenas o `media_id` retornado pela publicacao confirmada.
+O limite operacional recomendado para inicio e uso conservador e de 25 publicacoes por 24 horas.
+
+Contêineres sao criados apenas no processamento imediato do job, porque expiram aproximadamente
+apos 24 horas. Nao reutilize contêineres antigos nem publique o mesmo job sem uma chave externa
+idempotente.
+
 ## Testes
 
 ```bash
